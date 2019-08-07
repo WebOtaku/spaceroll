@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="assets/css/main.css">
+
+    <title>SpaceRoll</title>
+</head>
+<body class="body">
+    <div class="game">
+        <div class="stats">
+            <div class="stats__players">
+                <div class="stats__player stats__player-1 enable">
+                    <div class="name">Игрок 1</div>
+                    <div class="hp">100</div>
+                    <div class="mp">50</div>
+                    <div class="score">0000</div>
+                    <div class="weapon">
+                        <span class="weapon-type type-1 selected"></span>
+                        <span class="weapon-type type-2"></span>
+                        <span class="weapon-type type-3"></span>
+                    </div>
+                </div>
+
+                <div class="stats__player stats__player-2">
+                    <div class="name">Игрок 2</div>
+                    <div class="hp">100</div>
+                    <div class="mp">50</div>
+                    <div class="score">0000</div>
+                    <div class="weapon">
+                        <span class="weapon-type type-1 selected"></span>
+                        <span class="weapon-type type-2"></span>
+                        <span class="weapon-type type-3"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="time">10:00</div>
+
+            <div class="stats__enemies">
+                <div class="stats__enemy stats__enemy-1">
+                    <div class="name">Трус</div>
+                    <div class="hp">80</div>
+                </div>
+
+                <div class="stats__enemy stats__enemy-2">
+                    <div class="name">Бывалый</div>
+                    <div class="hp">120</div>
+                </div>
+
+                <div class="stats__enemy stats__enemy-3">
+                    <div class="name">Балбес</div>
+                    <div class="hp">80</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field"></div>
+
+        <div class="start enable">
+            <div class="title">SpaceRoll</div>
+            <div class="descr-button"><button class="button" id="descr-button">Описание игры</button></div>
+            <div class="players-selector">
+                <label for="one-player">Один игрок<input type="radio" id="one-player" name="players-selector" value="1" checked></label>
+                <label for="two-player">Два игрока<input type="radio" id="two-player" name="players-selector" value="2"></label>
+            </div>
+            <form action="#" class="form one-player-form enable">
+                <div></div><input type="text" class="input" id="nickname" placeholder="Имя игрока" minlength="3" maxlength="16">
+                <button type="button" class="button form-button start-button">Начать игру</button>
+            </form>
+            <form action="#" class="form two-player-form">
+                <input type="text" class="input" id="nickname-1" placeholder="Имя игрока 1" minlength="3" maxlength="16">
+                <input type="text" class="input" id="nickname-2" placeholder="Имя игрока 2" minlength="3" maxlength="16">
+                <button type="button" class="button form-button start-button">Начать игру</button>
+            </form>
+        </div>
+
+        <div class="end"></div>
+    </div>
+
+    <script src="assets/js/main.js" defer></script>
+</body>
+</html>
