@@ -17,11 +17,148 @@ const getStyle = (element, style) => {
     return (!isNaN(parseInt(s)))? parseInt(s) : s;
 }
 
+class Timer {
+    constructor(props, options) {
+        Timer.nextID = (Timer.nextID === undefined)? 0 : ++Timer.nextID;
+
+        this.id = Timer.nextID;
+        this.h = 0;
+        this.m = 0;
+        this.s = 0;
+        this.ms = 0;
+
+        this.withH = false;
+        this.withM = true;
+        this.withS = true;
+        this.withMS = true;
+
+        if (props) {
+            if (props.h) this.h = (props.h > 0)? props.h : -props.h;
+            if (props.m) this.m = (props.m > 0)? props.m : -props.m;
+            if (props.s) this.s = (props.s > 0)? props.s : -props.s;
+            if (props.ms) this.ms = (props.ms > 0)? props.ms : -props.ms;
+        }
+
+        if (options) {
+            if (options.withH !== undefined) this.withH = !!options.withH;
+            if (options.withM !== undefined) this.withM = !!options.withM;
+            if (options.withS !== undefined) this.withS = !!options.withS;
+            if (options.withMS !== undefined) this.withMS = !!options.withMS;
+        }
+
+        this.initialProps = { h: this.h, m: this.m, s: this.s, ms: this.ms };
+
+        this.val = 0;
+        this.str = '';
+
+        this.timerchange = new CustomEvent('timerchange', {
+            bubbles: true,
+            cancelable: true,
+            detail: this
+        });
+
+        this.timerstop = new CustomEvent('timerstop', {
+            bubbles: true,
+            cancelable: true,
+            detail: this
+        });
+
+        this.setVal();
+        this.setProps();
+        this.setStr();
+    }
+
+    start() {
+        let to = setTimeout(() => {
+            if (this.val > 0) {
+                this.dec();
+                this.start();
+            }
+        }, 1000);
+
+        if (this.val <= 0) this.stop();
+    }
+
+    stop() {
+        document.dispatchEvent(this.timerstop);
+        this.reset();
+    }
+
+    reset() {
+        this.h = this.initialProps.h;
+        this.m = this.initialProps.m;
+        this.s = this.initialProps.s;
+        this.ms = this.initialProps.ms;
+
+        this.setVal();
+        this.setProps();
+        this.setStr();
+    }
+
+    dec() {
+        document.dispatchEvent(this.timerchange);
+
+        this.setVal();
+        console.log('dec');
+        this.decX(1);
+        this.decX(10);
+        this.decX(100);
+    }
+
+    decX(x, i = 0) {
+        if (i < 10) {
+            let to = setTimeout(() => {
+                this.val -= x;
+                this.setProps();
+                this.setStr();
+                this.decX(x, ++i);
+            }, x);
+        }
+        else return;
+    }
+
+    setVal() {
+        this.val = (this.h * 3600000) + (this.m * 60000) + (this.s * 1000) + this.ms;
+    }
+
+    setProps() {
+        let valS = ~~(this.val / 1000);
+        this.h = ~~(valS / 360);
+        this.m = ~~(valS / 60);
+        this.s = valS % 60;
+        this.ms = this.val % 1000;
+
+        if (this.h >= 100) {
+            this.h = 100;
+            this.m = 0;
+            this.s = 0;
+            this.ms = 0;
+            this.setVal();
+        }
+    }
+
+    setStr() {
+        this.str = '';
+
+        let h = this.h.toString().padStart(2, '0');
+        let m = this.m.toString().padStart(2, '0');
+        let s = this.s.toString().padStart(2, '0');
+        let ms = this.ms.toString().padStart(3, '0');
+
+        if (this.withH) this.str = `${h}:`;
+        if (this.withM) this.str += `${m}:`;
+        if (this.withS) this.str += `${s}:`;
+        if (this.withMS) this.str += `${ms}`;
+    }
+}
+
 class Game {
     constructor() {
         this.time = 0;
         this.players = [];
         this.objects = [];
+
+        this.timer = {};
 
         this.gamemode = 1;
 
@@ -33,6 +170,19 @@ class Game {
     }
 
     binds() {
+        document.addEventListener('timerchange', (e) => {
+            if (e.detail.id === this.timer.id) {
+                qs('#timer').innerText = this.timer.str;
+            }
+        });
+
+        document.addEventListener('timerstop', (e) => {
+            if (e.detail.id === this.timer.id) {
+                alert('Игра закончена!');
+                window.location.reload();
+            }
+        });
+
         document.addEventListener('keydown', (e) => {
             this.keys.add(e.keyCode);
         });
@@ -49,12 +199,15 @@ class Game {
                 if (value === 1) {
                     qs('.two-player-form').classList.remove('enable');
                     qs('.one-player-form').classList.add('enable');
+                    qs('#nickname-1').value = '';
+                    qs('#nickname-2').value = '';
                     this.numPlayers = value;
                 }
 
                 if (value === 2) {
                     qs('.one-player-form').classList.remove('enable');
                     qs('.two-player-form').classList.add('enable');
+                    qs('#nickname').value = '';
                     this.numPlayers = value;
                 }
             });
@@ -78,19 +231,25 @@ class Game {
         qs('.field').classList.add('enable');
         qs('.stats').classList.add('enable');
 
-        this.spawnPlayers();
+        this.startTimer();
 
+        this.spawnPlayers();
         this.spawnEnemy();
 
         this.loop();
-    }
-
-    getTimer() {
 
     }
 
-    setTimer() {
+    startTimer() {
+        if ((this.gamemode === 1 || this.gamemode === 2) &&
+            (this.numPlayers === 1)) this.timer = new Timer({m: 5});
 
+        if ((this.gamemode === 1 || this.gamemode === 2) &&
+            (this.numPlayers === 2)) this.timer = new Timer({m: 3});
+
+        qs('#timer').innerText = this.timer.str;
+
+        this.timer.start();
     }
 
     loop() {
@@ -242,7 +401,7 @@ class Weapon extends Drawable {
         this.name = 'Обычный выстрел';
         this.damage = 2;
         this.mp = 0;
-        this.cd = 0;
+        this.cd = 1;
 
         this.offset = {
             x: 8,
@@ -260,14 +419,33 @@ class Weapon extends Drawable {
             }
         }
 
+        this.timer = new Timer({s: this.cd});
+
         this.shoot = () => {
             this.shooted = true;
+            this.timer.start();
             this.game.objects.push(new PlayerBullet(player.game, player));
         }
 
         if (shoot) this.shoot = shoot;
 
         this.shooted = false;
+
+        this.binds();
+    }
+
+    binds() {
+        document.addEventListener('timerstop', (e) => {
+            if (e.detail.id === this.timer.id) {
+                this.shooted = false;
+            }
+        });
+
+        document.addEventListener('timerchange', (e) => {
+            if (e.detail.id === this.timer.id) {
+                console.log(e.detail.s);
+            }
+        });
     }
 }
 
@@ -287,6 +465,7 @@ class Player extends Drawable {
                 cd: 3
             }, () => {
                 this.weapon.shooted = true;
+                this.weapon.timer.start();
 
                 let params = {
                     width: 20,
@@ -309,6 +488,7 @@ class Player extends Drawable {
                 cd: 5
             }, () => {
                 this.weapon.shooted = true;
+                this.weapon.timer.start();
 
                 let params = {
                     width: 20,
@@ -404,8 +584,8 @@ class Player_1 extends Player {
 
         if (keys.has(32) && !this.weapon.shooted)
             this.weapon.shoot();
-        else if (!keys.has(32))
-            this.weapon.shooted = false;
+        /*else if (!keys.has(32))
+            this.weapon.shooted = false;*/
 
         if (keys.has(49)) {
             this.weapon = this.weapons[0];
