@@ -2,20 +2,20 @@ const rand = (min, max) => {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+};
 
 const qs = (selector) => {
     return document.querySelector(selector);
-}
+};
 
 const qsAll = (selector) => {
     return document.querySelectorAll(selector);
-}
+};
 
 const getStyle = (element, style) => {
     let s = getComputedStyle(element)[style];
     return (!isNaN(parseInt(s)))? parseInt(s) : s;
-}
+};
 
 class Timer {
     constructor(props, options) {
@@ -30,7 +30,7 @@ class Timer {
         this.withH = false;
         this.withM = true;
         this.withS = true;
-        this.withMS = true;
+        this.withMS = false;
 
         if (props) {
             if (props.h) this.h = (props.h > 0)? props.h : -props.h;
@@ -51,6 +51,8 @@ class Timer {
         this.val = 0;
         this.str = '';
 
+        this.running = false;
+
         this.timerchange = new CustomEvent('timerchange', {
             bubbles: true,
             cancelable: true,
@@ -69,18 +71,22 @@ class Timer {
     }
 
     start() {
-        let to = setTimeout(() => {
+        this.running = true;
+
+        this.timeout = setTimeout(() => {
             if (this.val > 0) {
                 this.dec();
                 this.start();
             }
-        }, 1000);
+        }, 100);
 
         if (this.val <= 0) this.stop();
     }
 
     stop() {
         document.dispatchEvent(this.timerstop);
+        clearTimeout(this.timeout);
+        this.running = false;
         this.reset();
     }
 
@@ -99,22 +105,9 @@ class Timer {
         document.dispatchEvent(this.timerchange);
 
         this.setVal();
-        console.log('dec');
-        this.decX(1);
-        this.decX(10);
-        this.decX(100);
-    }
-
-    decX(x, i = 0) {
-        if (i < 10) {
-            let to = setTimeout(() => {
-                this.val -= x;
-                this.setProps();
-                this.setStr();
-                this.decX(x, ++i);
-            }, x);
-        }
-        else return;
+        this.val -= 100;
+        this.setProps();
+        this.setStr();
     }
 
     setVal() {
@@ -123,7 +116,7 @@ class Timer {
 
     setProps() {
         let valS = ~~(this.val / 1000);
-        this.h = ~~(valS / 360);
+        this.h = ~~(valS / 3600);
         this.m = ~~(valS / 60);
         this.s = valS % 60;
         this.ms = this.val % 1000;
@@ -152,9 +145,8 @@ class Timer {
     }
 }
 
-class Game {
+new class Game {
     constructor() {
-        this.time = 0;
         this.players = [];
         this.objects = [];
 
@@ -177,10 +169,7 @@ class Game {
         });
 
         document.addEventListener('timerstop', (e) => {
-            if (e.detail.id === this.timer.id) {
-                alert('Игра закончена!');
-                window.location.reload();
-            }
+            if (e.detail.id === this.timer.id) this.endGame();
         });
 
         document.addEventListener('keydown', (e) => {
@@ -194,7 +183,7 @@ class Game {
 
         qsAll('.players-selector input').forEach((radio) => {
             radio.addEventListener('click', (e) => {
-                let value = +e.target.value
+                let value = +e.target.value;
 
                 if (value === 1) {
                     qs('.two-player-form').classList.remove('enable');
@@ -236,8 +225,35 @@ class Game {
         this.spawnPlayers();
         this.spawnEnemy();
 
-        this.loop();
+        if (this.gamemode === 1) this.manaRecovery();
 
+        this.loop();
+    }
+
+    checkEndGame() {
+        if (this.players.length === 0) Game.endGame();
+    }
+
+    static endGame() {
+        alert('Игра закончена!');
+        window.location.reload();
+    }
+
+    /*
+    * mps - mana per time
+    * time - timout value
+    * */
+    manaRecovery(mpt = 3, time = 1500) {
+        setTimeout(() => {
+            this.players.forEach((player) => {
+                if (player.stats.mp < player.initialStats.mp) {
+                    if ((player.initialStats.mp - player.stats.mp) < mpt)
+                        player.stats.mp += player.initialStats.mp - player.stats.mp;
+                    else player.stats.mp += mpt;
+                }
+            });
+            this.manaRecovery();
+        }, time);
     }
 
     startTimer() {
@@ -256,14 +272,20 @@ class Game {
         requestAnimationFrame(() => {
             this.objects.forEach((object) => object.update());
             this.checkCollision();
+            this.checkEndGame();
             this.loop();
         });
     }
 
     spawnEnemy(gamemode = this.gamemode) {
         if (gamemode === 1) {
-            let timeout = setTimeout(() => {
-                this.objects.push(new Enemy(this));
+            setTimeout(() => {
+                this.objects.push(new Enemy(this, {
+                    name: 'XStriker',
+                    stats: {
+                        hp: 10
+                    }
+                }));
                 this.spawnEnemy();
             }, rand(2000, 4000));
         }
@@ -287,14 +309,14 @@ class Game {
 
     setNicknames() {
         if (this.numPlayers === 1) {
-            qs('.stats__player-1 .name').innerText = this.players[0].nickname;
+            qs('.stats__player_1 .name').innerText = this.players[0].nickname;
         }
 
         if (this.numPlayers === 2) {
-            qs('.stats__player-2').classList.add('enable');
+            qs('.stats__player_2').classList.add('enable');
 
-            qs('.stats__player-1 .name').innerText = this.players[0].nickname;
-            qs('.stats__player-2 .name').innerText = this.players[1].nickname;
+            qs('.stats__player_1 .name').innerText = this.players[0].nickname;
+            qs('.stats__player_2 .name').innerText = this.players[1].nickname;
         }
     }
 
@@ -320,37 +342,56 @@ class Game {
                 let nameA = objA.constructor.name.toLowerCase();
                 let nameB = objB.constructor.name.toLowerCase();
 
-                if (this.isCollision(objA, objB)) {
-                    if ((nameA === 'playerbullet') && (nameB === 'enemy')) {
-                        objA.remove();
-                        objB.remove();
+                if (Game.isCollision(objA, objB)) {
+                    if (this.gamemode === 1) {
+                        if ((nameA === 'playerbullet') &&
+                            (nameB === 'enemy')) {
+                            let scoreInc = 100;
+                            objA.remove();
+                            objB.decHP(objA.weapon.damage);
+                            if (objB.stats.hp <= 0)
+                                objA.player.incScore(scoreInc);
+                        }
+
+                        if ((nameA === 'enemybullet') &&
+                            ((nameB === 'player_1') || (nameB === 'player_2'))) {
+                            let scoreDec = 25;
+                            objA.remove();
+                            objB.decHP(objA.weapon.damage);
+                            objB.decScore(scoreDec);
+                        }
+
+                        if (((nameA === 'player_1') || (nameA === 'player_2')) && (nameB === 'enemy')) {
+                            let scoreDec = 50;
+                            objB.remove();
+                            objA.decHP(objB.stats.hp);
+                            objA.decScore(scoreDec);
+                        }
                     }
                 }
             });
         });
     }
 
-    isCollision(objA, objB) {
+    static isCollision(objA, objB) {
         let a = {
             x1: objA.x,
             y1: objA.y,
             x2: objA.x + objA.width,
             y2: objA.y + objA.height
-        }
+        };
 
         let b = {
             x1: objB.x,
             y1: objB.y,
             x2: objB.x + objB.width,
             y2: objB.y + objB.height
-        }
+        };
 
         return !( (a.x2 < b.x1) || (a.x1 > b.x2) ||
                   (a.y2 < b.y1) || (a.y1 > b.y2) );
     }
-}
-
-const game = new Game();
+};
 
 class Drawable {
     constructor(game) {
@@ -398,54 +439,48 @@ class Weapon extends Drawable {
     constructor(player, params, shoot) {
         super(player.game);
 
+        this.player = player;
+
         this.name = 'Обычный выстрел';
         this.damage = 2;
         this.mp = 0;
-        this.cd = 1;
+        this.cd = 100;
+        this.unit = 'ms';
 
         this.offset = {
             x: 8,
             y: 0
-        }
+        };
 
         if (params) {
             if (params.name) this.name = params.name;
             if (params.damage) this.damage = params.damage;
             if (params.mp) this.mp = params.mp;
             if (params.cd) this.cd = params.cd;
+            if (params.unit) this.unit = params.unit;
             if (params.offset){
                 if (params.offset.x) this.offset.x = params.offset.x;
                 if (params.offset.y) this.offset.y = params.offset.y;
             }
         }
 
-        this.timer = new Timer({s: this.cd});
+        this.timer = {};
 
-        this.shoot = () => {
-            this.shooted = true;
-            this.timer.start();
-            this.game.objects.push(new PlayerBullet(player.game, player));
-        }
-
-        if (shoot) this.shoot = shoot;
+        if (shoot) this.defaultShoot = shoot;
 
         this.shooted = false;
-
-        this.binds();
     }
 
-    binds() {
-        document.addEventListener('timerstop', (e) => {
-            if (e.detail.id === this.timer.id) {
-                this.shooted = false;
-            }
-        });
+    defaultShoot() {
+        this.game.objects.push(new PlayerBullet(this.player.game, this.player));
+    }
 
-        document.addEventListener('timerchange', (e) => {
-            if (e.detail.id === this.timer.id) {
-                console.log(e.detail.s);
-            }
-        });
+    shoot() {
+        this.shooted = true;
+        this.timer = new Timer({[this.unit]: this.cd});
+        this.timer.start();
+
+        this.defaultShoot();
     }
 }
 
@@ -462,16 +497,14 @@ class Player extends Drawable {
                 name: 'Тройной выстрел',
                 damage: 4,
                 mp: 6,
-                cd: 3
+                cd: 3,
+                unit: 's'
             }, () => {
-                this.weapon.shooted = true;
-                this.weapon.timer.start();
-
-                let params = {
+                const params = {
                     width: 20,
                     height: 10,
                     image: 'pbullet-1.png'
-                }
+                };
 
                 this.weapon.offset.y = 0;
                 this.game.objects.push(new PlayerBullet(this.game, this, params));
@@ -485,16 +518,14 @@ class Player extends Drawable {
                 name: 'Усиленный выстрел',
                 damage: 6,
                 mp: 8,
-                cd: 5
+                cd: 5,
+                unit: 's'
             }, () => {
-                this.weapon.shooted = true;
-                this.weapon.timer.start();
-
-                let params = {
+                const params = {
                     width: 20,
                     height: 30,
                     image: 'pbullet-2.png'
-                }
+                };
 
                 this.game.objects.push(new PlayerBullet(this.game, this, params));
             })
@@ -507,13 +538,28 @@ class Player extends Drawable {
         this.width = 140;
         this.height = 40;
 
+        this.initialStats = {
+            hp: 100,
+            mp: 50,
+            score: 0
+        };
+
         this.stats = {
             hp: 100,
             mp: 50,
-            score: 0,
+            score: 0
         };
 
         this.speed = 10;
+    }
+
+    decMP(mp) {
+        if (this.stats.mp >= mp) {
+            this.stats.mp -= mp;
+            return true;
+        }
+
+        return false;
     }
 
     checkKeys() {}
@@ -526,6 +572,36 @@ class Player extends Drawable {
         if (this.y > maxh) this.y = maxh;
         if (this.x < 0) this.x = 0;
         if (this.y < 0) this.y = 0;
+    }
+
+    updateStats(playerClassName) {
+        qs(`.stats__${playerClassName} .hp`).innerText = this.stats.hp;
+        qs(`.stats__${playerClassName} .mp`).innerText = this.stats.mp;
+        qs(`.stats__${playerClassName} .score`).innerText = this.stats.score;
+    }
+
+    incScore(val) {
+        this.stats.score += val;
+    }
+
+    decScore(val) {
+        this.stats.score -= val;
+    }
+
+    decHP(val) {
+        this.stats.hp -= val;
+    }
+
+    checkHP() {
+        if (this.stats.hp <= 0) {
+            this.stats.hp = 0;
+            this.remove();
+        }
+    }
+
+    update() {
+        super.update();
+        this.checkHP()
     }
 
     updateCords() {
@@ -564,6 +640,11 @@ class Player_1 extends Player {
         this.draw();
     }
 
+    update() {
+        super.update();
+        this.updateStats(this.constructor.name.toLowerCase());
+    }
+
     checkKeys() {
         let keys = this.game.keys;
 
@@ -582,10 +663,11 @@ class Player_1 extends Player {
         if (keys.has(68))
             this.offset.x = this.speed;
 
-        if (keys.has(32) && !this.weapon.shooted)
+        if (keys.has(32) && !this.weapon.shooted &&
+            !this.weapon.timer.running && this.decMP(this.weapon.mp))
             this.weapon.shoot();
-        /*else if (!keys.has(32))
-            this.weapon.shooted = false;*/
+        else if (!keys.has(32) && !this.weapon.timer.running)
+            this.weapon.shooted = false;
 
         if (keys.has(49)) {
             this.weapon = this.weapons[0];
@@ -611,6 +693,11 @@ class Player_2 extends Player {
         this.draw();
     }
 
+    update() {
+        super.update();
+        this.updateStats(this.constructor.name.toLowerCase());
+    }
+
     checkKeys() {
         let keys = this.game.keys;
 
@@ -629,9 +716,10 @@ class Player_2 extends Player {
         if (keys.has(39))
             this.offset.x = this.speed;
 
-        if (keys.has(16) && !this.weapon.shooted)
+        if (keys.has(16) && !this.weapon.shooted &&
+            !this.weapon.timer.running && this.decMP(this.weapon.mp))
             this.weapon.shoot();
-        else if (!keys.has(16))
+        else if (!keys.has(16) && !this.weapon.timer.running)
             this.weapon.shooted = false;
 
         if (keys.has(35)) {
@@ -664,7 +752,7 @@ class Enemy extends Drawable {
                     width: 20,
                     height: 10,
                     image: 'ebullet-1.png'
-                }
+                };
 
                 this.game.objects.push(new EnemyBullet(this.game, this, params));
                 this.weapon.timeoutShoot = setTimeout(() => this.weapon.shoot(), 600);
@@ -683,7 +771,7 @@ class Enemy extends Drawable {
                     width: 20,
                     height: 10,
                     image: 'ebullet-1.png'
-                }
+                };
 
                 this.weapon.offset.y = 0;
                 this.game.objects.push(new EnemyBullet(this.game, this, params));
@@ -708,7 +796,7 @@ class Enemy extends Drawable {
                     width: 20,
                     height: 30,
                     image: 'еbullet-2.png'
-                }
+                };
 
                 this.game.objects.push(new EnemyBullet(this.game, this, params));
 
@@ -718,7 +806,7 @@ class Enemy extends Drawable {
 
         this.weapon = this.weapons[0];
 
-        this.name = 'ИЛ-2 Штурмовик';
+        this.name = 'П-69';
 
         this.width = 140;
         this.height = 40;
@@ -728,14 +816,15 @@ class Enemy extends Drawable {
 
         this.image = 'enemy.png';
 
-        this.speed = 4;
+        this.speed = 3;
 
         this.stats = {
-            hp: 100,
-            mp: 50
-        }
+            hp: 100
+        };
 
         if (params) {
+            if (params.name) this.name = params.name;
+
             if (params.x) this.x = params.x;
             if (params.y) this.y = params.y;
 
@@ -745,10 +834,8 @@ class Enemy extends Drawable {
 
             if (params.speed) this.speed = params.speed;
 
-            if (params.stats) {
-                if (params.stats.hp) this.stats.hp = params.stats.hp;
-                if (params.stats.mp) this.stats.mp = params.stats.mp;
-            }
+            if (params.stats && params.stats.hp)
+                this.stats.hp = params.stats.hp;
         }
 
         this.offset.x = -this.speed;
@@ -758,8 +845,22 @@ class Enemy extends Drawable {
         this.el.style.width = `${this.width}px`;
         this.el.style.height = `${this.height}px`;
         this.el.style.backgroundImage = `url('./assets/images/${this.image}')`;
+        this.updateHP();
 
         this.weapon.shoot();
+    }
+
+    update() {
+        super.update();
+        this.updateHP();
+    }
+
+    decHP(val) {
+        this.stats.hp -= val;
+    }
+
+    updateHP() {
+        this.el.dataset.before = `${this.stats.hp} hp`;
     }
 
     checkCords() {
