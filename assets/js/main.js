@@ -145,7 +145,7 @@ class Timer {
     }
 }
 
-new class Game {
+class Game {
     constructor() {
         this.players = [];
         this.objects = [];
@@ -391,7 +391,9 @@ new class Game {
         return !( (a.x2 < b.x1) || (a.x1 > b.x2) ||
                   (a.y2 < b.y1) || (a.y1 > b.y2) );
     }
-};
+}
+
+const game = new Game();
 
 class Drawable {
     constructor(game) {
@@ -575,9 +577,25 @@ class Player extends Drawable {
     }
 
     updateStats(playerClassName) {
-        qs(`.stats__${playerClassName} .hp`).innerText = this.stats.hp;
-        qs(`.stats__${playerClassName} .mp`).innerText = this.stats.mp;
-        qs(`.stats__${playerClassName} .score`).innerText = this.stats.score;
+        const hp = qs(`.stats__${playerClassName} .hp`);
+        const mp = qs(`.stats__${playerClassName} .mp`);
+        const score = qs(`.stats__${playerClassName} .score`);
+
+        const weapons = qsAll(`.stats__${playerClassName} .weapon-type`);
+
+        weapons.forEach((weapon, i) => {
+            if (i === this.weapons.indexOf(this.weapon))
+                weapon.classList.add('selected');
+            else weapon.classList.remove('selected')
+        });
+
+
+        hp.innerText = this.stats.hp;
+        mp.innerText = this.stats.mp;
+        score.innerText = this.stats.score;
+
+        hp.style.backgroundSize = (this.stats.hp / this.initialStats.hp) * 100 + '%';
+        mp.style.backgroundSize = (this.stats.mp / this.initialStats.mp) * 100 + '%';
     }
 
     incScore(val) {
@@ -853,10 +871,18 @@ class Enemy extends Drawable {
     update() {
         super.update();
         this.updateHP();
+        this.checkHP();
     }
 
     decHP(val) {
         this.stats.hp -= val;
+    }
+
+    checkHP() {
+        if (this.stats.hp <= 0) {
+            this.stats.hp = 0;
+            this.remove();
+        }
     }
 
     updateHP() {
