@@ -17,6 +17,20 @@ const getStyle = (element, style) => {
     return (!isNaN(parseInt(s)))? parseInt(s) : s;
 };
 
+class SaveStatDB {
+    async save(url, data) {
+        let response = await fetch(url);
+
+        if (response.ok) {
+            let json = await response.json();
+        } else {
+            console.log("Ошибка HTTP: " + response.status);
+        }
+    }
+}
+
+window.saveStatDB = new SaveStatDB();
+
 class Timer {
     constructor(props, options) {
         Timer.nextID = (Timer.nextID === undefined)? 0 : ++Timer.nextID;
@@ -27,10 +41,10 @@ class Timer {
         this.s = 0;
         this.ms = 0;
 
-        this.withH = false;
+        this.withH = true;
         this.withM = true;
         this.withS = true;
-        this.withMS = false;
+        this.withMS = true;
 
         if (props) {
             if (props.h) this.h = (props.h > 0)? props.h : -props.h;
@@ -138,9 +152,12 @@ class Timer {
         let s = this.s.toString().padStart(2, '0');
         let ms = this.ms.toString().padStart(3, '0');
 
-        if (this.withH) this.str = `${h}:`;
-        if (this.withM) this.str += `${m}:`;
-        if (this.withS) this.str += `${s}:`;
+        if (this.withH) this.str = `${h}`;
+        if (this.withH && this.withM) this.str += ':';
+        if (this.withM) this.str += `${m}`;
+        if (this.withM && this.withS) this.str += ':';
+        if (this.withS) this.str += `${s}`;
+        if (this.withS && this.withMS) this.str += ':';
         if (this.withMS) this.str += `${ms}`;
     }
 }
@@ -504,7 +521,7 @@ class Player extends Drawable {
             }, () => {
                 const params = {
                     width: 20,
-                    height: 10,
+                    height: 9,
                     image: 'pbullet-1.png'
                 };
 
@@ -581,14 +598,13 @@ class Player extends Drawable {
         const mp = qs(`.stats__${playerClassName} .mp`);
         const score = qs(`.stats__${playerClassName} .score`);
 
-        const weapons = qsAll(`.stats__${playerClassName} .weapon-type`);
+        const weapons = qsAll(`.stats__${playerClassName} .weapon_type`);
 
         weapons.forEach((weapon, i) => {
             if (i === this.weapons.indexOf(this.weapon))
                 weapon.classList.add('selected');
             else weapon.classList.remove('selected')
         });
-
 
         hp.innerText = this.stats.hp;
         mp.innerText = this.stats.mp;
@@ -914,7 +930,7 @@ class Bullet extends Drawable {
         super(game);
 
         this.width = 20;
-        this.height = 10;
+        this.height = 9;
 
         this.image = 'pbullet-1.png';
     }
