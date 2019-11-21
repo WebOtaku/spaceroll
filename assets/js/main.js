@@ -197,6 +197,19 @@ class Game {
             this.keys.delete(e.keyCode);
         });
 
+        qs('#descr-button').addEventListener('click', (e) => {
+            qs('.modal').classList.add('enable');
+        });
+
+        qs('.modal').addEventListener('click', (e) => {
+            console.log(e.target);
+            if (e.target.classList.contains('modal'))
+                qs('.modal').classList.remove('enable');
+        });
+
+        qs('.button-modal-close').addEventListener('click', (e) => {
+            qs('.modal').classList.remove('enable');
+        });
 
         qsAll('.players-selector input').forEach((radio) => {
             radio.addEventListener('click', (e) => {
@@ -234,6 +247,7 @@ class Game {
 
     start() {
         qs('.start').classList.remove('enable');
+        qs('.game').classList.remove('game-start');
         qs('.field').classList.add('enable');
         qs('.stats').classList.add('enable');
 
