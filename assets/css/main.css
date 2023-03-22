@@ -1,7 +1,12 @@
 :root {
-    --color-before: rgba(204, 153, 255, 1);
-    --color-after: rgba(102, 0, 102, 0.8);
+    --color-before: rgba(51, 51, 204, 1);
+    --color-after: rgba(51, 204, 255, 1);
+    --text-color: #000;
+    --text-color-controls: #fff;
     --border-trans: border-color .25s ease-out;
+    --background-trans: background-color .25s ease-out;
+    --color-trans: color .25s ease-out;
+    --stroke-trans: stroke .25s ease-out;
     --stats-width: 150px;
 }
 
@@ -245,14 +250,23 @@ body {
     display: grid;
 }
 
+
+.game.game-start,
+.game.game-end {
+    align-content: center;
+}
+
 .start,
 .end {
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: 100px 50px 25px auto;
+    background-color: rgba(255, 255, 255, 0.5);
+    /* grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: auto; */
     justify-items: center;
     align-items: center;
     align-content: center;
     grid-gap: 15px;
+    padding: 15px;
+    border-radius: 30px;
 }
 
 .title {
@@ -265,8 +279,9 @@ body {
     padding: 8px;
     font-size: 1.15rem;
     border: 2px solid var(--color-before);
+    border-radius: 30px;
     background-color: var(--color-before);
-    color: var(--color-after);
+    color: var(--color-text-controls);
     transition: var(--border-trans);
     font-family: Roboto, sans-serif;
     cursor: pointer;
@@ -282,6 +297,7 @@ body {
     width: 225px;
     padding: 8px;
     border: 2px solid #fff;
+    border-radius: 30px;
     font-size: 1rem;
     text-align: center;
     outline: none;
@@ -294,6 +310,58 @@ body {
     border-color: var(--color-after);
 }
 
+.label, .radio {
+    cursor: pointer;
+}
+
+[type="radio"]:checked,
+[type="radio"]:not(:checked) {
+    position: absolute;
+    left: -9999px;
+}
+[type="radio"]:checked + label,
+[type="radio"]:not(:checked) + label
+{
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    line-height: 20px;
+    display: inline-block;
+    color: #fff;
+}
+[type="radio"]:checked + label:before,
+[type="radio"]:not(:checked) + label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-before);
+    border-radius: 100%;
+    background: #fff;
+}
+[type="radio"]:checked + label:after,
+[type="radio"]:not(:checked) + label:after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: var(--color-before);
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    border-radius: 100%;
+    transition: all 0.2s ease;
+}
+[type="radio"]:not(:checked) + label:after {
+    opacity: 0;
+    transform: scale(0);
+}
+[type="radio"]:checked + label:after {
+    opacity: 1;
+    transform: scale(1);
+}
+
 .form {
     display: none;
 }
@@ -301,6 +369,7 @@ body {
 .form.enable {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 .form > * {
@@ -315,6 +384,71 @@ body {
 .start .descr-button,
 .start .players-selector,
 .start .form {
-    grid-column-start: 3;
-    grid-column-end: 7;
+    /*grid-column-start: 3;
+    grid-column-end: 7;*/
+}
+
+.modal {
+    display: none;
+
+}
+
+.modal.enable {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(255, 255, 255, 0.5);
+    z-index: 1000;
+}
+
+.modal__content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    max-width: 800px;
+    min-width: 250px;
+
+    background-color: var(--color-before);
+    color: #fff;
+    border-radius: 30px;
+    padding: 30px;
+}
+
+.button-modal-close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 30px;
+    background-color: var(--color-before);
+    cursor: pointer;
+    outline: none;
+}
+
+.button-modal-close > svg {
+    stroke: white;
+    transition: var(--color-trans);
+}
+
+.button-modal-close:hover svg,
+.button-modal-close:focus svg {
+    stroke: black;
+}
+
+.modal__header {
+    margin-bottom: 15px;
 }

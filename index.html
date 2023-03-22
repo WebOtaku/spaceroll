@@ -11,7 +11,7 @@
     <title>SpaceRoll</title>
 </head>
 <body class="body">
-    <div class="game">
+    <div class="game game-start">
         <div class="stats">
             <div class="stats__players">
                 <div class="stats__player stats__player_1 enable">
@@ -49,12 +49,19 @@
         <div class="start enable">
             <div class="title">SpaceRoll</div>
             <div class="descr-button"><button class="button" id="descr-button">Описание игры</button></div>
-            <div class="players-selector">
-                <label for="one-player">Один игрок<input type="radio" id="one-player" name="players-selector" value="1" checked></label>
-                <label for="two-player">Два игрока<input type="radio" id="two-player" name="players-selector" value="2"></label>
-            </div>
+            <form action="#" class="form enable players-selector">
+                <div class="form-control-group">
+                    <input type="radio" class="radio" name="select-player" id="one-player" name="players-selector" value="1" checked="true">
+                    <label for="one-player" class="label">Один игрок</label>
+                </div>
+                <div class="form-control-group">
+                    <input type="radio" class="radio" name="select-player" id="two-player" name="players-selector" value="2">
+                    <label for="two-player" class="label">Два игрока</label>
+                </div>
+            </form>
             <form action="#" class="form one-player-form enable">
-                <div></div><input type="text" class="input" id="nickname" placeholder="Имя игрока" minlength="3" maxlength="16">
+                <input type="text" class="input" id="nickname" placeholder="Имя игрока" minlength="3" maxlength="16">
+                <input type="text" class="input" style="visibility: hidden;">
                 <button type="button" class="button form-button start-button">Начать игру</button>
             </form>
             <form action="#" class="form two-player-form">
@@ -65,6 +72,24 @@
         </div>
 
         <div class="end"></div>
+
+
+    </div>
+
+    <div class="modal">
+        <div class="modal__content">
+            <button class="button-modal-close">
+                <svg width="20" height="20">
+                    <line x1="0" y1="0" x2="20" y2="20"/>
+                    <line x1="0" y1="20" x2="20" y2="0"/>
+                </svg>
+            </button>
+            <div class="modal__header"><h2 class="modal__header">Описание игры</h2></div>
+            <div class="modal__body">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Iusto ipsa voluptatibus nobis adipisci explicabo ad possimus minima eum odit facere magnam modi, beatae enim itaque, aliquid, aliquam, nihil quo quidem.
+            </div>
+        </div>
+        <!-- <div class="modal__footer"></div> -->
     </div>
 
     <script src="assets/js/main.js" defer></script>
